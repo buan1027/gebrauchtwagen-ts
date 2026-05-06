@@ -35,5 +35,6 @@ jobs:
 
       - name: Prettier
         run: bun run prettier:check
-        env:
-          NODE_OPTIONS: --experimental-strip-types
+
+      - name: Tests
+        run: bun run test
