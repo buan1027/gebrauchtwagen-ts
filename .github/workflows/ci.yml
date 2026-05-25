@@ -30,6 +30,9 @@ jobs:
       - name: TypeScript
         run: bun run tsc
 
+      - name: Oxlint
+        run: bun run lint
+
       - name: ESLint
         run: bun run eslint
 

@@ -176,7 +176,7 @@ Taetigkeit.
 | 7   | GraphQL Yoga integrieren                               | graphql          | Anna     | Queries und Mutations ueber dieselbe Service-Schicht                      |
 | 8   | Keycloak mit OIDC und OAuth2 anbinden                  | auth, security   | Mo       | Tokenpruefung, Rollen `user` und `admin`                                  |
 | 9   | Bruno Collection erstellen                             | bruno            | Anna     | REST, GraphQL, Auth, Health, Prometheus, DB Reload                        |
-| 10  | GitHub Actions fuer Qualitaetssicherung einrichten     | ci               | Mo       | `tsc`, ESLint, Oxfmt, Tests, Prisma Generate                              |
+| 10  | GitHub Actions fuer Qualitaetssicherung einrichten     | ci               | Mo       | `tsc`, Oxlint, ESLint, Oxfmt, Tests, Prisma Generate                       |
 | 11  | Docker-Image und Compose-Setup finalisieren            | docker           | Anna     | App, DB und Keycloak starten reproduzierbar                               |
 | 12  | Monitoring und Pino-Logging abrunden                   | logging          | Anna     | Request Logs, Response Time, Prometheus-Endpunkt                          |
 | 13  | k6-Lasttests vorbereiten                               | k6               | Mo       | Lasttest-Skript fuer REST und GraphQL                                     |
@@ -197,7 +197,7 @@ Taetigkeit.
 
 ## Akzeptanzkriterien
 
-- `bun run tsc`, `bun run eslint`, `bun run fmt:check` und
+- `bun run tsc`, `bun run lint`, `bun run eslint`, `bun run fmt:check` und
   `bun run test` laufen lokal und in GitHub Actions.
 - Docker Compose startet PostgreSQL, Keycloak und Appserver reproduzierbar.
 - REST, GraphQL, Bruno, k6, Security Checks und Doku sind im README oder

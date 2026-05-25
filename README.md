@@ -18,7 +18,7 @@ Die wichtigsten Einstiegspunkte sind:
 
 ## Enthalten
 
-- Bun-, TypeScript-, ESLint- und Oxfmt-Konfiguration
+- Bun-, TypeScript-, Oxlint-, ESLint- und Oxfmt-Konfiguration
 - Hono-Appserver unter `src/app.mts` und `src/index.mts`
 - REST-Endpunkte fuer Gebrauchtwagen unter `src/rest/gebrauchtwagen-router.mts`
 - GraphQL-Yoga-Endpunkt fuer Gebrauchtwagen unter `src/graphql/graphql-app.mts`
@@ -132,6 +132,7 @@ Dauer wird ausserdem als Header `X-Response-Time` gesetzt.
 
 ```powershell
 bun run tsc
+bun run lint
 bun run eslint
 bun run fmt:check
 bun run test
@@ -149,11 +150,24 @@ CI ohne PostgreSQL, Docker und Keycloak reproduzierbar bleibt. Der
 Prisma-Produktivpfad wird separat durch Service-Unit-Tests mit gemocktem
 Prisma-Client abgesichert.
 
+Das Linter-Tooling ist an die aktualisierte Hono-Vorlage angeglichen:
+`bun run lint` und `bun run lint:fix` verwenden Oxlint mit
+`oxlint-tsgolint`. ESLint bleibt zusaetzlich aktiv, weil die bestehende
+Konfiguration detaillierte Projektregeln und Plugins abdeckt. Gegenueber der
+Vorlage werden die Oxlint-Restriction-Regeln nicht pauschal aktiviert, damit
+der vorhandene Projektstil mit `async`/`await`, Objekt-Spread und Beispiel-
+Skripten stabil bleibt; diese Tiefe prueft weiterhin ESLint. Direkte
+Vergleiche mit `undefined`, zum Beispiel `value === undefined`, bleiben die
+vereinbarte Schreibweise; die Oxlint-Regel `no-undefined` ist deshalb wie in
+der Vorlage deaktiviert.
+
 Weitere vorbereitete Scripts:
 
 | Script                 | Zweck                                                        |
 | ---------------------- | ------------------------------------------------------------ |
 | `bun run prisma:generate` | Prisma Client generieren; wird auch in CI verwendet       |
+| `bun run lint`         | Schneller Hono-kompatibler Oxlint-Check mit Typinformationen |
+| `bun run lint:fix`     | Automatische Oxlint-Korrekturen anwenden                     |
 | `bun run fmt`          | Quelltexte mit `oxfmt` formatieren                           |
 | `bun run fmt:check`    | Formatierung mit `oxfmt` pruefen; wird auch in CI verwendet  |
 | `bun run asciidoctor`  | Projekthandbuch bauen, sobald Issue #14 die Quelle anlegt    |
