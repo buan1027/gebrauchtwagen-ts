@@ -30,6 +30,18 @@ services:
       start_period: 10s
     stop_signal: SIGINT
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.2
+    container_name: gebrauchtwagen-keycloak
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
+    command: ["start-dev", "--http-port=8080"]
+    ports:
+      - "${KEYCLOAK_PORT:-8080}:8080"
+
   db:
     image: postgres:17
     container_name: gebrauchtwagen-db
