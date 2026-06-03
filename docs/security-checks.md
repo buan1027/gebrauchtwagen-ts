@@ -58,12 +58,31 @@ dependency-check `
   --scan . `
   --out reports `
   --data C:\Zimmermann\dependency-check-data `
+  --exclude **/node_modules/** `
+  --exclude **/reports/** `
+  --exclude **/src/generated/** `
   --nodeAuditSkipDevDependencies `
   --nodePackageSkipDevDependencies `
   --disableArchive `
   --disableAssembly `
   --disableYarnAudit
 ```
+
+`node_modules` wird bewusst ausgeschlossen, weil der Ordner lokale
+Installationsartefakte und Dev-Tool-Dateien enthaelt. Ohne diesen Ausschluss
+meldet der RetireJS-Analyzer z.B. `lodash.js` aus einem Dev-Dependency-Pfad,
+obwohl `bun audit --prod` fuer die ausgelieferten Produktionsabhaengigkeiten
+keine Findings mehr meldet.
+
+Aktueller Stand:
+
+- Am 2026-06-03 wurde `bun run dependency-check` lokal ausgefuehrt.
+- Ergebnis im HTML-Report: 19 Dependencies gescannt, 0 vulnerable
+  Dependencies, 0 Vulnerabilities gefunden, 0 Suppressions.
+- Dependency Check meldet erwartbar `No lock file exists`, weil das Projekt
+  Bun mit `bun.lock` statt `package-lock.json` verwendet. Deshalb bleibt
+  `bun audit --prod` die primaere Paket-Audit-Pruefung fuer Node-
+  Abhaengigkeiten; Dependency Check ergaenzt den best-effort OWASP-Report.
 
 ## NVD API Key
 
