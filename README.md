@@ -40,6 +40,24 @@ Das relationale Zielmodell ist als PlantUML-ER-Diagramm dokumentiert:
 In VS Code kann die PlantUML-Datei mit der PlantUML-Erweiterung geoeffnet und
 mit `<Alt>d` als Vorschau angezeigt werden.
 
+## Projekthandbuch
+
+Das Projekthandbuch buendelt Setup, Architektur, REST, GraphQL, Docker,
+Security, Tests, CI, Lasttests, Teamarbeit und offene Risiken:
+
+```powershell
+bun run asciidoctor
+```
+
+Quelle:
+
+- [docs/projekthandbuch.adoc](docs/projekthandbuch.adoc)
+
+Die generierte HTML-Ausgabe liegt lokal unter
+`docs/html/projekthandbuch.html` und wird nicht versioniert. Der Standard-Build
+sendet keine PlantUML-Diagramme an externe Dienste; gerenderte Kroki-Diagramme
+werden nur mit bewusst gesetztem `ALLOW_REMOTE_KROKI=true` aktiviert.
+
 ## DB-Backend einrichten
 
 ```powershell
