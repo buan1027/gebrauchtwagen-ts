@@ -1,0 +1,65 @@
+@startuml
+!theme plain
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+package "src" {
+    component "app.mts\nHono App" as app
+    component "container.mts\nDefault Services" as container
+
+    package "rest" {
+        component "gebrauchtwagen-router" as rest_router
+        component "read-router" as read_router
+        component "write-router" as write_router
+        component "validation" as validation
+        component "headers/statuscode" as rest_helpers
+    }
+
+    package "graphql" {
+        component "graphql-app" as graphql_app
+        component "query-handler" as gql_query
+        component "mutation-handler" as gql_mutation
+        component "types/errors" as gql_types
+    }
+
+    package "service" {
+        interface "ReadService" as read_service
+        interface "WriteService" as write_service
+        component "Prisma Service" as prisma_service
+        component "pageable" as pageable
+    }
+
+    package "config" {
+        component "env/server/logger" as config
+        component "prisma-client" as prisma_client
+    }
+
+    package "monitoring" {
+        component "prometheus-router" as prometheus
+        component "metrics middleware" as metrics
+    }
+}
+
+app --> rest_router
+app --> graphql_app
+app --> prometheus
+app --> metrics
+app --> container
+rest_router --> read_router
+rest_router --> write_router
+read_router --> read_service
+write_router --> write_service
+write_router --> validation
+write_router --> rest_helpers
+graphql_app --> gql_query
+graphql_app --> gql_mutation
+gql_query --> read_service
+gql_mutation --> write_service
+gql_mutation --> validation
+container --> prisma_service
+prisma_service --> prisma_client
+read_service <|.. prisma_service
+write_service <|.. prisma_service
+read_service --> pageable
+app --> config
+@enduml

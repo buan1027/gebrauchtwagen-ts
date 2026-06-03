@@ -12,6 +12,8 @@ src/generated
 build
 extras/doc/html/*
 extras/doc/ReadMe.html
+docs/html
+docs/docs
 scripts/dependency-check-report.html
 reports
 temp
