@@ -1,0 +1,28 @@
+@startuml
+!theme plain
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+actor "Entwickler:in" as dev
+actor "Bruno / HTTP Client" as client
+
+node "Docker Compose" as compose {
+    component "Hono Appserver\nBun + TypeScript" as app
+    database "PostgreSQL\nCSV-Demodaten" as db
+    component "Keycloak\nDev-Instanz" as keycloak
+}
+
+cloud "GitHub" as github {
+    component "Repository" as repo
+    component "Actions CI" as ci
+    component "Project Board" as project
+}
+
+dev --> repo : Branch, Commit, PR
+repo --> ci : Pull Request
+repo --> project : Issues und PRs
+client --> app : REST, GraphQL, Health, Prometheus
+app --> db : Prisma
+app ..> keycloak : OIDC geplant (#8)
+dev --> compose : lokale Umgebung starten
+@enduml

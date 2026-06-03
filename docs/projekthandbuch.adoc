@@ -1,0 +1,328 @@
+= Projekthandbuch Gebrauchtwagen-Appserver
+Anna, Mo
+:doctype: book
+:toc: left
+:toclevels: 3
+:sectnums:
+:source-highlighter: highlight.js
+:icons: font
+
+== Ziel und Kontext
+
+Das Projekt `gebrauchtwagen-ts` ist ein TypeScript-Appserver fuer das
+Aggregat `gebrauchtwagen`. Die Umsetzung orientiert sich an der Hono-Vorlage
+und kombiniert Hono, Prisma, PostgreSQL, GraphQL Yoga, Bun, Docker, Keycloak,
+Bruno, Vitest, k6, Pino, Prometheus und GitHub Actions.
+
+Der Appserver stellt REST- und GraphQL-Schnittstellen bereit. PostgreSQL wird
+lokal ueber Docker Compose mit CSV-Demodaten initialisiert. Keycloak ist als
+lokaler Compose-Service vorbereitet; die App-seitige OIDC-/Rollenintegration
+bleibt in Issue #8 sichtbar offen.
+
+== Team und Organisation
+
+Die Arbeit wird ueber GitHub Issues und das GitHub Project geplant. Die
+Tabelle zeigt Status, Woche, Prioritaet, Aufwand und Ergebnis. Pull Requests
+werden dem Project explizit hinzugefuegt, damit sie in der Table View sichtbar
+sind.
+
+[cols="1,3",options="header"]
+|===
+| Person | Schwerpunkt
+| Anna | Hono-App, REST, GraphQL, Doku, Docker, Review
+| Mo | Prisma/PostgreSQL, Keycloak, Tests, CI, Lasttests, Security
+|===
+
+Arbeitsregeln:
+
+* ein Issue wird auf `In Progress` gesetzt, bevor die Umsetzung startet
+* Branches enthalten keine `codex`-Praefixe
+* kleine, fachliche Commits halten Zwischenschritte nachvollziehbar
+* Pull Requests enthalten Issue-Bezug und Testnotiz
+* `main` bleibt der gemergte, gepruefte Projektstand
+
+== Architekturueberblick
+
+[plantuml,architektur-kontext,svg]
+----
+include::diagramme/src/architektur-kontext.plantuml[]
+----
+
+Die Anwendung trennt Transport, Validierung, Service-Schicht und Infrastruktur.
+REST und GraphQL greifen auf dieselben Service-Vertraege zu. Tests koennen
+ueber `createApp()` eigene Services injizieren; der Produktivpfad nutzt den
+Prisma-Service gegen PostgreSQL.
+
+[plantuml,komponenten,svg]
+----
+include::diagramme/src/komponenten.plantuml[]
+----
+
+== Datenmodell
+
+Das relationale Modell wird per SQL und CSV-Dateien reproduzierbar aufgebaut.
+Die Daten liegen unter `extras/compose/postgres/init/gebrauchtwagen`. Beim
+ersten Start des PostgreSQL-Containers werden Schema und Demodaten geladen.
+
+Das ER-Diagramm ist als PlantUML-Datei versioniert:
+
+* `docs/diagramme/src/er-diagramm.plantuml`
+* `docs/er-diagramm.md`
+
+[plantuml,er-diagramm,svg]
+----
+include::diagramme/src/er-diagramm.plantuml[]
+----
+
+Erwarteter Demo-Datenstand:
+
+[cols="1,1",options="header"]
+|===
+| Tabelle | Zeilen
+| `gebrauchtwagen` | 12
+| `standort` | 12
+| `schaden` | 8
+| `hauptuntersuchung` | 12
+|===
+
+== Lokales Setup
+
+[source,powershell]
+----
+Copy-Item .env.example .env
+docker compose -f extras\compose\postgres\compose.yml up -d --build
+bun run prisma:generate
+bun run dev
+----
+
+Standard-Endpunkte:
+
+[cols="1,2",options="header"]
+|===
+| Bereich | URL
+| Appserver | `http://localhost:3000`
+| REST | `http://localhost:3000/api/gebrauchtwagen`
+| GraphQL | `http://localhost:3000/graphql`
+| Health | `http://localhost:3000/health/liveness`
+| Prometheus | `http://localhost:3000/prometheus`
+| Keycloak Dev | `http://localhost:8080`
+|===
+
+Wenn Ports belegt sind, koennen `APP_PORT` und `KEYCLOAK_PORT` vor dem
+Compose-Start gesetzt werden.
+
+== REST-Schnittstelle
+
+REST liegt unter `/api/gebrauchtwagen`. Lese- und Schreibzugriffe sind in
+getrennten Routern umgesetzt.
+
+Beispiele:
+
+[source,powershell]
+----
+Invoke-RestMethod http://localhost:3000/api/gebrauchtwagen
+Invoke-RestMethod "http://localhost:3000/api/gebrauchtwagen?marke=vw&modell=golf&page=1&size=10"
+Invoke-RestMethod http://localhost:3000/api/gebrauchtwagen/1
+----
+
+Unterstuetzte REST-Aspekte:
+
+* Suche nach Marke, Modell, Fahrzeugklasse, Kraftstoffart und Schadenfreiheit
+* Pagination mit `page` und `size`
+* `count-only` fuer reine Anzahlabfragen
+* ETag und `If-None-Match` fuer Detailzugriffe
+* Zod-Validierung fuer Schreibzugriffe
+* Problem-Details fuer Validierungs-, Auth- und Versionsfehler
+* Statuscodes wie `201`, `204`, `304`, `401`, `403`, `404`, `406`, `412`,
+  `422` und `428`
+
+Schreibzugriffe sind derzeit mit den vorhandenen Testtokens abgesichert. Die
+Ersetzung durch echte Keycloak/OIDC-JWT-Pruefung ist in Issue #8 beschrieben.
+
+== GraphQL-Schnittstelle
+
+GraphQL Yoga liegt unter `/graphql` und nutzt dieselbe Service-Schicht wie
+REST. Queries decken Liste, Suche und Detail ab. Mutations decken Create,
+Update und Delete ab und verwenden dieselbe Zod-Validierung wie REST.
+
+Beispiel fuer eine Suche:
+
+[source,graphql]
+----
+query {
+  gebrauchtwagen(filter: { marke: "vw", modell: "golf" }) {
+    id
+    marke
+    modell
+    preis
+  }
+}
+----
+
+Beispiel fuer eine Mutation:
+
+[source,graphql]
+----
+mutation {
+  createGebrauchtwagen(input: {
+    marke: "VW"
+    modell: "Golf"
+    preis: 19990
+    kilometerstand: 42000
+    kraftstoffart: BENZIN
+    fahrzeugklasse: KOMPAKTKLASSE
+  }) {
+    id
+    version
+  }
+}
+----
+
+== Bruno Collection
+
+Die Bruno Collection liegt unter `bruno/` und nutzt das Environment `local`.
+Sie enthaelt Requests fuer REST, GraphQL, Health, Prometheus, Keycloak-Token
+und Dev-DB-Reload. Keycloak-Token und DB-Reload sind sichtbar vorbereitet und
+ueber Issues abgegrenzt.
+
+== Tests und Qualitaetssicherung
+
+Die lokale Sammelpruefung entspricht der CI:
+
+[source,powershell]
+----
+bun run check
+----
+
+Einzelschritte:
+
+* `bun run prisma:generate`
+* `bun run tsc`
+* `bun run lint`
+* `bun run eslint`
+* `bun run fmt:check`
+* `bun run test`
+
+Teststruktur:
+
+* REST-Integrationstests unter `test/integration/rest`
+* GraphQL-Integrationstests unter `test/integration/graphql`
+* Prisma-Service-Unit-Tests unter `test/service`
+* Fixture-Service unter `test/fixtures`
+* gemeinsames Fetch-Testsetup unter `test/integration/setup.ts`
+
+Die HTTP-Integrationstests nutzen bewusst einen Fixture-Service. Dadurch
+bleibt CI ohne PostgreSQL, Docker und Keycloak stabil. Der Produktivpfad wird
+separat ueber Prisma-Service-Unit-Tests abgesichert.
+
+== CI
+
+GitHub Actions prueft Pull Requests gegen `main`. Der Workflow nutzt Bun,
+installiert die Abhaengigkeiten aus `bun.lock`, generiert den Prisma Client und
+fuehrt dieselben lokalen Checks aus. Ein PR wird erst gemerged, wenn die
+`quality`-Pruefung erfolgreich ist.
+
+== Docker und Betrieb
+
+Das App-Image kann lokal gebaut werden:
+
+[source,powershell]
+----
+docker build --tag gebrauchtwagen-ts:latest .
+----
+
+Die vollstaendige lokale Umgebung:
+
+[source,powershell]
+----
+docker compose -f extras\compose\postgres\compose.yml up -d --build
+----
+
+Stoppen:
+
+[source,powershell]
+----
+docker compose -f extras\compose\postgres\compose.yml down
+----
+
+Compose startet App, PostgreSQL und Keycloak. Die App nutzt im Compose-Netz
+`db:5432`. PostgreSQL laedt beim ersten Containerstart Schema und CSV-Daten.
+
+== Logging und Monitoring
+
+Pino schreibt strukturierte Logs fuer Start und Requests. Das Log-Level kommt
+aus `LOG_LEVEL`. Request-Logs enthalten Methode und URL, Response-Time-Logs
+enthalten Status und Dauer. Die Dauer wird auch als Header
+`X-Response-Time` gesetzt.
+
+Prometheus-Metriken liegen unter `/prometheus`. Die App zaehlt Requests mit
+`http_requests_total` und misst Dauer mit `http_request_duration_seconds`.
+
+== Lasttests
+
+Das k6-Skript liegt unter `test/lasttest/script.ts`:
+
+[source,powershell]
+----
+bun run k6
+----
+
+Optionale Parameter steuern Dauer und Lastprofil:
+
+[source,powershell]
+----
+$env:REST_RAMP_UP_DURATION = "5s"
+$env:REST_HOLD_DURATION = "10s"
+$env:REST_MAX_VUS = "3"
+$env:ENABLE_GRAPHQL = "true"
+bun run k6
+----
+
+== Security
+
+Security-Pruefungen sind in `docs/security-checks.md` dokumentiert.
+
+[source,powershell]
+----
+bun run audit
+bun run dependency-check
+----
+
+Aktueller Stand vom 2026-06-03:
+
+* `bun run audit` meldet keine Vulnerabilities
+* ein `fast-uri`-Finding wurde durch Override auf `3.1.2` behoben
+* OWASP Dependency Check erzeugt einen lokalen HTML-Report unter `reports`
+* finaler OWASP-Report: 19 Dependencies gescannt, 0 vulnerable Dependencies,
+  0 Vulnerabilities, 0 Suppressions
+
+NVD API Keys werden nur als Umgebungsvariable `NVD_API_KEY` gesetzt und nicht
+versioniert.
+
+== Offene Punkte und Risiken
+
+[cols="1,3",options="header"]
+|===
+| Issue | Einordnung
+| #8 | App-seitige Keycloak/OIDC-JWT-Pruefung mit Rollen `user` und `admin` ist offen.
+| #15 | Abschlussreview und Abgabecheck stehen nach Fertigstellung der Doku noch aus.
+|===
+
+Die Docker-/Compose-Grundlage fuer Keycloak ist vorhanden. Bis #8 umgesetzt
+ist, bleiben geschuetzte REST- und GraphQL-Schreibzugriffe auf die vorhandenen
+Testtokens beschraenkt.
+
+== Reproduzierbarkeit
+
+Das Projekthandbuch wird mit Asciidoctor gebaut:
+
+[source,powershell]
+----
+bun run asciidoctor
+----
+
+Die Ausgabe liegt unter `docs/html/projekthandbuch.html`. PlantUML-Diagramme
+werden als versionierte PlantUML-Dateien eingebunden. Der Standard-Build sendet
+keine Diagrammdaten an externe Dienste. Wenn ein gerendertes Kroki-Diagramm
+benoetigt wird und die Datenfreigabe bewusst akzeptiert ist, kann der Build mit
+`ALLOW_REMOTE_KROKI=true` gestartet werden.
