@@ -27,7 +27,11 @@ Bewertung:
 
 Aktueller Stand:
 
-- Am 2026-06-03 wurde `bun run audit` lokal ausgefuehrt.
+- Am 2026-06-03 meldete `bun run audit` zunaechst zwei High-Findings fuer
+  `fast-uri@3.1.0` ueber Prisma-/Tooling-Abhaengigkeiten.
+- Die Findings wurden durch einen gezielten Override auf `fast-uri@3.1.2`
+  behoben.
+- Danach wurde `bun run audit` erneut ausgefuehrt.
 - Ergebnis: keine Findings in Produktionsabhaengigkeiten.
 
 ## OWASP Dependency Check
