@@ -213,8 +213,12 @@ Weitere vorbereitete Scripts:
 | `bun run asciidoctor`  | Projekthandbuch bauen, sobald Issue #14 die Quelle anlegt    |
 | `bun run k6`           | Lasttest aus `test\lasttest\script.ts` fuer Issue #13        |
 | `bun run sonar`        | Lokalen Sonar Scanner starten, falls installiert             |
-| `bun run dependency-check` | OWASP Dependency Check vorbereiten; Details in Issue #17 |
+| `bun run dependency-check` | OWASP Dependency Check fuer Produktionsabhaengigkeiten   |
 | `bun run audit`        | Produktionsabhaengigkeiten mit Bun pruefen                   |
+
+Die Security-Pruefungen mit `bun audit --prod`, OWASP Dependency Check und
+NVD API Key sind in [docs/security-checks.md](docs/security-checks.md)
+dokumentiert.
 
 ## Bruno Collection
 
