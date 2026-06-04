@@ -24,8 +24,11 @@
       "username": "admin",
       "enabled": true,
       "emailVerified": true,
+      "email": "admin@example.invalid",
       "firstName": "Demo",
       "lastName": "Admin",
+      "requiredActions": [],
+      "disableableCredentialTypes": [],
       "credentials": [
         {
           "type": "password",
@@ -39,8 +42,11 @@
       "username": "user",
       "enabled": true,
       "emailVerified": true,
+      "email": "user@example.invalid",
       "firstName": "Demo",
       "lastName": "User",
+      "requiredActions": [],
+      "disableableCredentialTypes": [],
       "credentials": [
         {
           "type": "password",
@@ -74,13 +80,6 @@
       "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": true,
       "authorizationServicesEnabled": true,
-      "claims": {
-        "address.formatted": true,
-        "phone_number_verified": true,
-        "email_verified": true,
-        "family_name": false,
-        "given_name": false
-      },
       "protocolMappers": [
         {
           "name": "realm roles",
