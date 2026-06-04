@@ -22,6 +22,7 @@ import {
     toGebrauchtwagenType,
     toNumber,
 } from './types.mts';
+import { verifyJWT, hasAdminRole } from '../config/jwt-auth.mts';
 
 type UpdateGebrauchtwagenParams = {
     readService: GebrauchtwagenReadService;
@@ -33,15 +34,46 @@ type UpdateGebrauchtwagenParams = {
 };
 
 const adminTokens = new Set(['admin-token']);
+const userTokens = new Set(['user-token']);  // statisches Test-Token
 
-const requireAdminAuthorization = (request: Request): void => {
+const parseAuthorizationToken = (
+    authorizationHeader: string | null,
+): string | null => {
+    if (authorizationHeader === null || !authorizationHeader.startsWith('Bearer ')) {
+        return null;
+    }
+
+    return authorizationHeader.slice('Bearer '.length).trim();
+};
+
+const requireAdminAuthorizationAsync = async (
+    request: Request,
+): Promise<void> => {
     const authorization = request.headers.get('authorization');
-    if (authorization === null || !authorization.startsWith('Bearer ')) {
+    const token = parseAuthorizationToken(authorization);
+
+    if (token === null) {
         throw toUnauthorized('Bearer-Token fehlt');
     }
 
-    const token = authorization.slice('Bearer '.length).trim();
-    if (!adminTokens.has(token)) {
+    // Check for static test token first (backward compatibility)
+    if (adminTokens.has(token)) {
+        return;
+    }
+
+    // Reject user-token with 403 (has a valid token but not admin role)
+    if (userTokens.has(token)) {
+        throw toForbidden('Admin-Rolle erforderlich');
+    }
+
+    // Try JWT validation
+    const claims = await verifyJWT(token);
+
+    if (claims === null) {
+        throw toUnauthorized('Token ist ungueltig oder abgelaufen');
+    }
+
+    if (!hasAdminRole(claims)) {
         throw toForbidden('Admin-Rolle erforderlich');
     }
 };
@@ -51,7 +83,7 @@ export const createGebrauchtwagenHandler = async (
     request: Request,
     input: GebrauchtwagenInput,
 ) => {
-    requireAdminAuthorization(request);
+    await requireAdminAuthorizationAsync(request);
 
     try {
         const payload = gebrauchtwagenBodySchema.parse(input);
@@ -76,7 +108,7 @@ export const updateGebrauchtwagenHandler = async ({
     version,
     input,
 }: UpdateGebrauchtwagenParams): Promise<UpdatePayload> => {
-    requireAdminAuthorization(request);
+    await requireAdminAuthorizationAsync(request);
 
     const numericId = toNumber(id);
     if (!isPositiveId(numericId)) {
@@ -113,7 +145,7 @@ export const deleteGebrauchtwagenHandler = async (
     request: Request,
     id: ID,
 ): Promise<DeletePayload> => {
-    requireAdminAuthorization(request);
+    await requireAdminAuthorizationAsync(request);
 
     const numericId = toNumber(id);
     if (!isPositiveId(numericId)) {
