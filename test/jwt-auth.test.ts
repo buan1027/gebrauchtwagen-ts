@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { hasAdminRole, hasUserRole } from '../../src/config/jwt-auth.mts';
-import type { KeycloakClaims } from '../../src/config/jwt-auth.mts';
+import { hasAdminRole, hasUserRole } from '../src/config/jwt-auth.mts';
+import type { KeycloakClaims } from '../src/config/jwt-auth.mts';
 
 describe('JWT Auth - Keycloak Claims', () => {
     describe('hasAdminRole', () => {
