@@ -3,6 +3,7 @@ import {
     forbidden,
     unauthorized,
 } from '../problem-details.mts';
+import { requireAdminAuthorization as authorizeAdminToken } from '../config/jwt-auth.mts';
 import { statuscode } from './statuscode.mts';
 
 const bearerScheme = new Set(['bearer']);
@@ -47,6 +48,32 @@ const parseAuthorization = (
     }
 
     return token;
+};
+
+export const requireAdminAuthorizationAsync = async (
+    authorizationHeader: string | undefined,
+): Promise<Response | undefined> => {
+    const result = await authorizeAdminToken(authorizationHeader);
+
+    if (result.status === 'authorized') {
+        return undefined;
+    }
+
+    if (result.status === 'missing') {
+        return createProblemDetails(
+            unauthorized,
+            'Bearer-Token fehlt oder ist ungueltig',
+        );
+    }
+
+    if (result.status === 'forbidden') {
+        return createProblemDetails(forbidden, 'Admin-Rolle erforderlich');
+    }
+
+    return createProblemDetails(
+        unauthorized,
+        'Token ist ungueltig oder abgelaufen',
+    );
 };
 
 export const requireAdminAuthorization = (
