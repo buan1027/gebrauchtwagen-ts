@@ -1,10 +1,10 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { hasAdminRole, hasUserRole } from '../src/config/jwt-auth.mts';
 import type { KeycloakClaims } from '../src/config/jwt-auth.mts';
 
 describe('JWT Auth - Keycloak Claims', () => {
     describe('hasAdminRole', () => {
-        it('erkennt Admin-Rolle korrekt', () => {
+        test('erkennt Admin-Rolle korrekt', () => {
             const claims: KeycloakClaims = {
                 sub: 'test-user',
                 realm_access: { roles: ['admin', 'user'] },
@@ -12,7 +12,7 @@ describe('JWT Auth - Keycloak Claims', () => {
             expect(hasAdminRole(claims)).toBe(true);
         });
 
-        it('gibt false zurück ohne Admin-Rolle', () => {
+        test('gibt false zurück ohne Admin-Rolle', () => {
             const claims: KeycloakClaims = {
                 sub: 'test-user',
                 realm_access: { roles: ['user'] },
@@ -20,14 +20,14 @@ describe('JWT Auth - Keycloak Claims', () => {
             expect(hasAdminRole(claims)).toBe(false);
         });
 
-        it('behandelt fehlende realm_access korrekt', () => {
+        test('behandelt fehlende realm_access korrekt', () => {
             const claims: KeycloakClaims = {
                 sub: 'test-user',
             };
             expect(hasAdminRole(claims)).toBe(false);
         });
 
-        it('behandelt undefined roles korrekt', () => {
+        test('behandelt undefined roles korrekt', () => {
             const claims: KeycloakClaims = {
                 sub: 'test-user',
                 realm_access: {},
@@ -37,7 +37,7 @@ describe('JWT Auth - Keycloak Claims', () => {
     });
 
     describe('hasUserRole', () => {
-        it('akzeptiert user-Rolle', () => {
+        test('akzeptiert user-Rolle', () => {
             const claims: KeycloakClaims = {
                 sub: 'test-user',
                 realm_access: { roles: ['user'] },
@@ -45,7 +45,7 @@ describe('JWT Auth - Keycloak Claims', () => {
             expect(hasUserRole(claims)).toBe(true);
         });
 
-        it('akzeptiert auch admin-Rolle (admin kann alles)', () => {
+        test('akzeptiert auch admin-Rolle (admin kann alles)', () => {
             const claims: KeycloakClaims = {
                 sub: 'test-user',
                 realm_access: { roles: ['admin'] },
@@ -53,7 +53,7 @@ describe('JWT Auth - Keycloak Claims', () => {
             expect(hasUserRole(claims)).toBe(true);
         });
 
-        it('gibt false zurück ohne Rollen', () => {
+        test('gibt false zurück ohne Rollen', () => {
             const claims: KeycloakClaims = {
                 sub: 'test-user',
                 realm_access: { roles: [] },

@@ -1,12 +1,11 @@
-import { createRemoteJWKSet, jwtVerify } from 'jose';
-import type { JWTPayload } from 'jose';
+import { createRemoteJWKSet, jwtVerify, type JWTPayload } from 'jose';
 import { env } from './env.mts';
 
-export interface KeycloakClaims extends JWTPayload {
-    realm_access?: {
+export type KeycloakClaims = JWTPayload & {
+    ['realm_access']?: {
         roles?: string[];
     };
-}
+};
 
 export type AdminAuthorizationResult =
     | { status: 'authorized' }
@@ -14,13 +13,13 @@ export type AdminAuthorizationResult =
     | { status: 'invalid' }
     | { status: 'forbidden' };
 
-let cachedJWKSet: ReturnType<typeof createRemoteJWKSet> | null = null;
+let cachedJWKSet: ReturnType<typeof createRemoteJWKSet> | undefined;
 const bearerScheme = new Set(['bearer']);
 const staticAdminTokens = new Set(['admin-token']);
 const staticUserTokens = new Set(['user-token']);
 
 const getJWKSet = () => {
-    if (cachedJWKSet === null) {
+    if (cachedJWKSet === undefined) {
         cachedJWKSet = createRemoteJWKSet(new URL(env.keycloak.jwksUrl));
     }
     return cachedJWKSet;
@@ -50,16 +49,16 @@ export const parseBearerToken = (
 
 export const verifyJWT = async (
     token: string,
-): Promise<KeycloakClaims | null> => {
+): Promise<KeycloakClaims | undefined> => {
     try {
         const { payload } = await jwtVerify(token, getJWKSet(), {
             issuer: env.keycloak.issuer,
             audience: env.keycloak.audience,
         });
 
-        return payload as KeycloakClaims;
+        return payload;
     } catch {
-        return null;
+        return undefined;
     }
 };
 
@@ -93,7 +92,7 @@ export const requireAdminAuthorization = async (
     }
 
     const claims = await verifyJWT(token);
-    if (claims === null) {
+    if (claims === undefined) {
         return { status: 'invalid' };
     }
 
