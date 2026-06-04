@@ -47,7 +47,7 @@
     "eslint": "eslint --concurrency auto src test package.json",
     "fmt": "oxfmt -c oxfmt.config.json",
     "fmt:check": "oxfmt -c oxfmt.config.json --check",
-    "k6": "k6 run test\\lasttest\\script.ts",
+    "k6": "k6 run test/lasttest/script.ts",
     "leasot": "leasot --exit-nicely src/**/*.mts",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
