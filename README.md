@@ -170,8 +170,8 @@ Wenn Ports bereits belegt sind, koennen andere Host-Ports gesetzt werden:
 ```powershell
 $env:APP_PORT = '3100'
 $env:KEYCLOAK_PORT = '8180'
-$env:KEYCLOAK_ADMIN = 'admin'
-$env:KEYCLOAK_ADMIN_PASSWORD = 'admin'
+$env:KC_BOOTSTRAP_ADMIN_USERNAME = 'admin'
+$env:KC_BOOTSTRAP_ADMIN_PASSWORD = 'admin'
 docker compose -f extras\compose\postgres\compose.yml up -d --build
 ```
 
