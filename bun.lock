@@ -5,6 +5,7 @@
     "": {
       "name": "gebrauchtwagen-ts",
       "dependencies": {
+        "@hono/node-server": "2.0.1",
         "@prisma/adapter-pg": "7.8.0",
         "@prisma/client": "7.8.0",
         "@prisma/sqlcommenter-query-insights": "7.8.0",
@@ -27,7 +28,6 @@
         "@asciidoctor/core": "3.0.4",
         "@eslint-community/eslint-plugin-eslint-comments": "4.7.1",
         "@eslint/js": "10.0.1",
-        "@hono/node-server": "2.0.1",
         "@stylistic/eslint-plugin": "5.10.0",
         "@tsconfig/node24": "24.0.4",
         "@tsconfig/strictest": "2.0.8",
