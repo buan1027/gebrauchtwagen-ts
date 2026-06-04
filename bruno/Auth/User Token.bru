@@ -1,7 +1,7 @@
 meta {
-  name: Admin Token
+  name: User Token
   type: http
-  seq: 1
+  seq: 2
 }
 
 post {
@@ -18,14 +18,14 @@ body:form-urlencoded {
   grant_type: password
   client_id: {{keycloakClientId}}
   client_secret: {{keycloakClientSecret}}
-  username: {{adminUsername}}
-  password: {{adminPassword}}
+  username: {{userUsername}}
+  password: {{userPassword}}
 }
 
 script:post-response {
-  bru.setEnvVar("adminToken", res.body.access_token);
+  bru.setEnvVar("userToken", res.body.access_token);
 }
 
 docs {
-  Holt ein echtes Keycloak-Access-Token fuer den Demo-Admin und speichert es als adminToken.
+  Holt ein echtes Keycloak-Access-Token fuer den Demo-User und speichert es als userToken.
 }
