@@ -260,14 +260,12 @@ dokumentiert.
 Die Bruno Collection liegt unter `bruno/`. Fuer lokale Entwicklung wird das
 Environment `local` verwendet; es setzt `baseUrl` auf `http://localhost:3000`.
 
-Die folgenden Tokens stehen fuer Test-Zwecke zur Verfuegung:
+Vor schreibenden Requests wird in Bruno zuerst ein echtes Keycloak-Token
+geholt:
 
-- `admin-token`: Statischer Test-Token mit Admin-Rolle (fuer lokale Tests)
-- `user-token`: Statischer Test-Token ohne Admin-Rolle (fuer Auth-Tests)
-
-Oder echte Keycloak-Tokens fuer OIDC-Integration:
+- `Auth/Admin Token` speichert ein Admin-JWT als `adminToken`
+- `Auth/User Token` speichert ein User-JWT als `userToken` fuer 403-Tests
 - Token-Endpoint: `http://localhost:8080/realms/gebrauchtwagen/protocol/openid-connect/token`
-- Mit Client-Credentials fuer Realm `gebrauchtwagen`
 
 Typische Aufrufe sind enthalten fuer:
 
@@ -276,4 +274,5 @@ Typische Aufrufe sind enthalten fuer:
 - Health-Liveness, Health-Readiness und Prometheus
 - Keycloak Token-Request und Dev-DB-Reload
 
-Alle Write-Requests (Create, Update, Delete) erfordern einen gültigen Bearer-Token mit Admin-Rolle.
+Alle Write-Requests (Create, Update, Delete) erfordern ein gueltiges
+Bearer-Token mit Admin-Rolle.

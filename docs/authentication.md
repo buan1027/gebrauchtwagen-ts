@@ -1,166 +1,121 @@
 # Authentifizierung mit Keycloak und OIDC/OAuth2
 
-## Überblick
+## Ueberblick
 
-Dieses Projekt verwendet Keycloak zur sicheren Authentifizierung und Autorisierung von API-Anfragen über OIDC (OpenID Connect) und JWT-Tokens.
+Der Appserver validiert Bearer-Tokens von Keycloak mit `jose`. Geschuetzte
+REST- und GraphQL-Schreibzugriffe benoetigen ein gueltiges JWT mit der
+Realm-Rolle `admin`. Lesende Zugriffe bleiben ohne Token moeglich.
 
-## Architektur
+## Lokaler Keycloak
 
-### Komponenten
+Docker Compose startet Keycloak zusammen mit App und PostgreSQL:
 
-- **Keycloak**: Identity & Access Manager (IAM) für OIDC/OAuth2
-  - Läuft lokal in Docker Compose unter `http://localhost:8080`
-  - Konfigurierbar über Realm: `gebrauchtwagen`
-  - Client ID: `gebrauchtwagen-app`
+```powershell
+docker compose -f extras\compose\postgres\compose.yml up -d --build
+```
 
-- **JWT-Validierung** (`src/config/jwt-auth.mts`):
-  - Token-Signatur-Verifikation gegen Keycloak JWKS
-  - Auslesen von Rollen aus `realm_access.roles`
-  - JWKS-Caching zur Performance
+Der Realm `gebrauchtwagen` wird beim Keycloak-Start aus
+`extras/compose/keycloak/realm-export.json` importiert.
 
-- **REST & GraphQL Auth-Middleware**:
-  - REST: `src/rest/rest-headers.mts`
-  - GraphQL: `src/graphql/mutation-handler.mts`
-  - Unterstützt statische Test-Tokens (`admin-token`, `user-token`) für lokale Entwicklung
+Lokale Demo-Zugangsdaten:
+
+| Benutzer | Passwort | Rollen |
+| -------- | -------- | ------ |
+| `admin`  | `admin`  | `admin`, `user` |
+| `user`   | `user`   | `user` |
+
+Client-Konfiguration:
+
+| Wert | Inhalt |
+| ---- | ------ |
+| Realm | `gebrauchtwagen` |
+| Client ID | `gebrauchtwagen-app` |
+| Client Secret | `gebrauchtwagen-secret` |
+| Token Endpoint | `http://localhost:8080/realms/gebrauchtwagen/protocol/openid-connect/token` |
+
+## Token Anfordern
+
+Admin-Token:
+
+```powershell
+$body = @{
+  grant_type = 'password'
+  client_id = 'gebrauchtwagen-app'
+  client_secret = 'gebrauchtwagen-secret'
+  username = 'admin'
+  password = 'admin'
+}
+$token = (Invoke-RestMethod `
+  -Uri http://localhost:8080/realms/gebrauchtwagen/protocol/openid-connect/token `
+  -Method Post `
+  -ContentType 'application/x-www-form-urlencoded' `
+  -Body $body).access_token
+```
+
+User-Token fuer `403`-Tests:
+
+```powershell
+$body.username = 'user'
+$body.password = 'user'
+$userToken = (Invoke-RestMethod `
+  -Uri http://localhost:8080/realms/gebrauchtwagen/protocol/openid-connect/token `
+  -Method Post `
+  -ContentType 'application/x-www-form-urlencoded' `
+  -Body $body).access_token
+```
+
+## Token Verwenden
+
+REST-Schreibzugriff:
+
+```powershell
+Invoke-WebRequest `
+  -Uri http://localhost:3000/api/gebrauchtwagen `
+  -Method Post `
+  -ContentType 'application/json' `
+  -Headers @{ Authorization = "Bearer $token" } `
+  -Body '{"marke":"BMW","modell":"320i","fahrzeugklasse":"MITTELKLASSE","kraftstoffart":"BENZIN","schadenfrei":true,"kilometerstand":27000}'
+```
+
+Erwartetes Verhalten:
+
+| Fall | Ergebnis |
+| ---- | -------- |
+| Kein Bearer-Token | `401 Unauthorized` |
+| Ungueltiges Token | `401 Unauthorized` |
+| Gueltiges Token ohne `admin`-Rolle | `403 Forbidden` |
+| Gueltiges Admin-Token | Schreiboperation wird ausgefuehrt |
 
 ## Konfiguration
 
-### Umgebungsvariablen
+Lokale Ausfuehrung ohne Docker nutzt `.env`:
 
-```env
-# Keycloak OIDC Configuration
+```properties
 KEYCLOAK_ISSUER=http://localhost:8080/realms/gebrauchtwagen
 KEYCLOAK_AUDIENCE=gebrauchtwagen-app
 KEYCLOAK_JWKS_URL=http://localhost:8080/realms/gebrauchtwagen/protocol/openid-connect/certs
 ```
 
-### Lokal starten
+Im Compose-Netzwerk setzt `extras/compose/postgres/compose.yml` fuer die App
+eine interne JWKS-URL:
 
-```powershell
-# Mit docker compose (lokal)
-docker compose -f extras/compose/postgres/compose.yml up -d
-
-# Keycloak UI öffnen
-# http://localhost:8080
-
-# Admin-Login (standardmäßig)
-# Benutzer: admin
-# Passwort: admin
+```properties
+KEYCLOAK_JWKS_URL=http://keycloak:8080/realms/gebrauchtwagen/protocol/openid-connect/certs
 ```
 
-## Token Workflow
-
-### Typ 1: Statische Test-Tokens (für lokale Tests)
-
-```bash
-# Admin-Zugriff
-Authorization: Bearer admin-token
-
-# User-Zugriff (ohne Admin-Rolle) → führt zu 403 Forbidden
-Authorization: Bearer user-token
-```
-
-### Typ 2: Echte Keycloak-Tokens (für OIDC)
-
-#### Token anfordern
-
-```bash
-curl -X POST http://localhost:8080/realms/gebrauchtwagen/protocol/openid-connect/token \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "grant_type=client_credentials" \
-  -d "client_id=gebrauchtwagen-app" \
-  -d "client_secret=YOUR_CLIENT_SECRET"
-```
-
-#### Token verwenden
-
-```bash
-curl -X POST http://localhost:3000/api/gebrauchtwagen \
-  -H "Authorization: Bearer <JWT_TOKEN>" \
-  -H "Content-Type: application/json" \
-  -d '{"marke":"BMW","modell":"X5"}'
-```
-
-## Error-Codes
-
-- **401 Unauthorized**
-  - Bearer-Token fehlt: `Authorization: Bearer <token>` Header erforderlich
-  - Token ungültig: JWT-Signatur oder Ablauf ungültig
-  - Token abgelaufen: `exp` Claim ist in Vergangenheit
-
-- **403 Forbidden**
-  - Admin-Rolle erforderlich: Token ist gültig, aber ohne `admin` Rolle in `realm_access.roles`
-
-## Rollen und Claims
-
-### Keycloak Realm Roles
-
-Im Realm `gebrauchtwagen` müssen diese Rollen definiert sein:
-
-- `admin`: Vollzugriff auf Schreiboperationen (Create, Update, Delete)
-- `user`: Lesezugriff nur
-
-### JWT Claims Struktur
-
-```json
-{
-  "sub": "user-id",
-  "iss": "http://localhost:8080/realms/gebrauchtwagen",
-  "aud": "gebrauchtwagen-app",
-  "exp": 1234567890,
-  "iat": 1234567800,
-  "realm_access": {
-    "roles": ["admin", "user"]
-  }
-}
-```
+Der `issuer` bleibt absichtlich `http://localhost:8080/realms/gebrauchtwagen`,
+weil die Demo-Tokens ueber den Host-Port ausgestellt werden und dieser Wert im
+JWT steht.
 
 ## Tests
 
-### Unit-Tests
-```bash
-bun run test -- test/jwt-auth.test.ts
-```
+CI-Tests verwenden einen Fixture-Server und statische Testtokens. Diese Tokens
+sind nur in `NODE_ENV=development` oder `NODE_ENV=test` aktiv:
 
-Tests für:
-- Admin-Rolle Erkennung
-- User-Rolle Erkennung
-- Fehlende Rollen-Behandlung
+| Token | Zweck |
+| ----- | ----- |
+| `admin-token` | Admin-Pfad in Unit-/Integrationstests |
+| `user-token` | 403-Pfad in Unit-/Integrationstests |
 
-### Integration-Tests
-
-```bash
-bun run test -- test/integration/rest/gebrauchtwagen.read.test.ts
-```
-
-Tests decken ab:
-- POST ohne Token → 401
-- POST mit falscher Rolle → 403
-- POST mit gültiger Admin-Rolle → 201
-
-## Entwickler-Tipps
-
-### Lokale Tests mit statischen Tokens
-
-Für schnelle lokale Tests verwenden Sie die vordefinierten Tokens aus `.env.example`:
-
-```bash
-# Token in Bruno Collection oder curl setzen
-Authorization: Bearer admin-token      # für Schreibzugriffe
-Authorization: Bearer user-token       # für Auth-Fehler-Tests
-```
-
-### Token debuggen
-
-JWT-Tokens können auf https://jwt.io dekodiert werden (nur zu Debugging-Zwecken, **nicht mit echten Secrets vertrautenswerkt!)
-
-### JWKS Caching prüfen
-
-Die App cashet die JWKS 1x nach der ersten Anfrage. Für lokale Keycloak-Änderungen Pod neustarten oder JWKS-Cache clearen.
-
-## Weitere Ressourcen
-
-- Keycloak Dokumentation: https://www.keycloak.org/documentation
-- OIDC Standard: https://openid.net/specs/openid-connect-core-1_0.html
-- JWT: https://jwt.io/
-- OpenJWT (jose): https://github.com/panva/jose
+Im Docker-Compose-Betrieb laeuft die App mit `NODE_ENV=production`; dort werden
+die statischen Tokens nicht akzeptiert.
