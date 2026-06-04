@@ -1,25 +1,30 @@
 @startuml
 !theme plain
+top to bottom direction
 skinparam componentStyle rectangle
 skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam nodesep 55
+skinparam ranksep 45
 
 package "src" {
     component "app.mts\nHono App" as app
-    component "container.mts\nDefault Services" as container
 
     package "rest" {
         component "gebrauchtwagen-router" as rest_router
-        component "read-router" as read_router
-        component "write-router" as write_router
-        component "validation" as validation
-        component "headers/statuscode" as rest_helpers
+        component "read-router\nwrite-router" as rest_routes
+        component "validation\nheaders/statuscode" as rest_helpers
     }
 
     package "graphql" {
         component "graphql-app" as graphql_app
-        component "query-handler" as gql_query
-        component "mutation-handler" as gql_mutation
+        component "query-handler\nmutation-handler" as gql_handlers
         component "types/errors" as gql_types
+    }
+
+    package "monitoring" {
+        component "prometheus-router" as prometheus
+        component "metrics middleware" as metrics
     }
 
     package "service" {
@@ -29,37 +34,34 @@ package "src" {
         component "pageable" as pageable
     }
 
-    package "config" {
-        component "env/server/logger" as config
-        component "prisma-client" as prisma_client
-    }
+    component "container.mts\nDefault Services" as container
 
-    package "monitoring" {
-        component "prometheus-router" as prometheus
-        component "metrics middleware" as metrics
+    package "config" {
+        component "env/server/logger" as cfg
+        component "prisma-client" as prisma_client
     }
 }
 
-app --> rest_router
-app --> graphql_app
-app --> prometheus
-app --> metrics
-app --> container
-rest_router --> read_router
-rest_router --> write_router
-read_router --> read_service
-write_router --> write_service
-write_router --> validation
-write_router --> rest_helpers
-graphql_app --> gql_query
-graphql_app --> gql_mutation
-gql_query --> read_service
-gql_mutation --> write_service
-gql_mutation --> validation
+app --> rest_router : REST
+app --> graphql_app : GraphQL
+app --> prometheus : Metriken
+app --> container : Services
+app --> cfg : Konfiguration
+
+rest_router --> rest_routes
+rest_router --> rest_helpers
+graphql_app --> gql_handlers
+graphql_app --> gql_types
+metrics -[hidden]- prometheus
+
+rest_routes --> read_service
+rest_routes --> write_service
+gql_handlers --> read_service
+gql_handlers --> write_service
 container --> prisma_service
-prisma_service --> prisma_client
-read_service <|.. prisma_service
-write_service <|.. prisma_service
+
+prisma_service ..|> read_service
+prisma_service ..|> write_service
 read_service --> pageable
-app --> config
+prisma_service --> prisma_client
 @enduml

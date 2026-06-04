@@ -2,7 +2,7 @@
 '
 ' Preview in VS Code mit PlantUML-Erweiterung: <Alt>d
 
-@startuml ER Diagramm
+@startuml er-diagramm
 
 hide circle
 skinparam linetype ortho

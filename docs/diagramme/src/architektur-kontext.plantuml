@@ -23,6 +23,6 @@ repo --> ci : Pull Request
 repo --> project : Issues und PRs
 client --> app : REST, GraphQL, Health, Prometheus
 app --> db : Prisma
-app ..> keycloak : OIDC geplant (#8)
+app --> keycloak : OIDC/JWT und Rollen
 dev --> compose : lokale Umgebung starten
 @enduml
