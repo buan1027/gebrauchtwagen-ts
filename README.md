@@ -177,13 +177,30 @@ docker compose -f extras\compose\postgres\compose.yml up -d --build
 
 Die App verwendet im Compose-Netzwerk `db:5432` und greift damit auf die beim
 PostgreSQL-Start geladenen CSV-Demodaten zu. Keycloak ist als lokale
-Dev-Instanz im gleichen Compose-Stack enthalten; die OIDC-Anbindung der App
-bleibt weiterhin in Issue #8.
+Dev-Instanz im gleichen Compose-Stack enthalten und stellt den Realm
+`gebrauchtwagen` fuer die OIDC/OAuth2-Integration bereit.
 
 Zum Stoppen der Umgebung:
 
 ```powershell
 docker compose -f extras\compose\postgres\compose.yml down
+```
+
+## Authentifizierung und Autorisierung
+
+Die App verwendet JWT-Tokens von Keycloak fuer sichere Schreibzugriffe:
+
+- OIDC/JWT-Validierung mit `jose` gegen die Keycloak-JWKS-URL
+- Rollenbasierte Autorisierung ueber `realm_access.roles`
+- `401` bei fehlendem oder ungueltigem Token
+- `403` bei gueltigem Token ohne Admin-Rolle
+
+Fuer lokale Ausfuehrung ohne Docker werden diese Variablen aus `.env` genutzt:
+
+```properties
+KEYCLOAK_ISSUER=http://localhost:8080/realms/gebrauchtwagen
+KEYCLOAK_AUDIENCE=gebrauchtwagen-app
+KEYCLOAK_JWKS_URL=http://localhost:8080/realms/gebrauchtwagen/protocol/openid-connect/certs
 ```
 
 ## Qualitaetssicherung
@@ -241,16 +258,22 @@ dokumentiert.
 ## Bruno Collection
 
 Die Bruno Collection liegt unter `bruno/`. Fuer lokale Entwicklung wird das
-Environment `local` verwendet; es setzt `baseUrl` auf `http://localhost:3000`
-und enthaelt die aktuellen Testtokens `admin-token` und `user-token`.
+Environment `local` verwendet; es setzt `baseUrl` auf `http://localhost:3000`.
+
+Die folgenden Tokens stehen fuer Test-Zwecke zur Verfuegung:
+
+- `admin-token`: Statischer Test-Token mit Admin-Rolle (fuer lokale Tests)
+- `user-token`: Statischer Test-Token ohne Admin-Rolle (fuer Auth-Tests)
+
+Oder echte Keycloak-Tokens fuer OIDC-Integration:
+- Token-Endpoint: `http://localhost:8080/realms/gebrauchtwagen/protocol/openid-connect/token`
+- Mit Client-Credentials fuer Realm `gebrauchtwagen`
 
 Typische Aufrufe sind enthalten fuer:
 
 - REST-Liste, Detail, Suche, Count-only, Create, Update, Delete und Fehlerfall
 - GraphQL-Liste, Detail, Suche, Create, Update und Delete
 - Health-Liveness, Health-Readiness und Prometheus
-- vorbereitete Requests fuer Keycloak Token und Dev-DB-Reload
+- Keycloak Token-Request und Dev-DB-Reload
 
-Keycloak/OIDC ist weiterhin durch Issue #8 abgedeckt. Der vorbereitete
-DB-Reload-Request verweist auf Issue #35, weil der passende Dev-Endpunkt noch
-nicht im Appserver vorhanden ist.
+Alle Write-Requests (Create, Update, Delete) erfordern einen gültigen Bearer-Token mit Admin-Rolle.

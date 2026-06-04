@@ -10,8 +10,13 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      keycloak:
+        condition: service_started
     environment:
       DATABASE_URL: postgresql://gebrauchtwagen:gebrauchtwagen@db:5432/gebrauchtwagen?schema=gebrauchtwagen
+      KEYCLOAK_AUDIENCE: gebrauchtwagen-app
+      KEYCLOAK_ISSUER: http://localhost:${KEYCLOAK_PORT:-8080}/realms/gebrauchtwagen
+      KEYCLOAK_JWKS_URL: http://keycloak:8080/realms/gebrauchtwagen/protocol/openid-connect/certs
       NODE_ENV: production
       PORT: 3000
     ports:
@@ -38,7 +43,9 @@ services:
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD:-admin}
       KC_HEALTH_ENABLED: "true"
       KC_METRICS_ENABLED: "true"
-    command: ["start-dev", "--http-port=8080"]
+    command: ["start-dev", "--http-port=8080", "--import-realm"]
+    volumes:
+      - ../keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
     ports:
       - "${KEYCLOAK_PORT:-8080}:8080"
 

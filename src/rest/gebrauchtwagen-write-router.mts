@@ -14,7 +14,7 @@ import { createLocation } from './create-base-url.mts';
 import {
     createEtag,
     parseEtagVersion,
-    requireAdminAuthorization,
+    requireAdminAuthorizationAsync,
 } from './rest-headers.mts';
 import { statuscode } from './statuscode.mts';
 import {
@@ -26,7 +26,7 @@ import {
 
 const createPostHandler =
     (service: GebrauchtwagenWriteService) => async (context: Context) => {
-        const authError = requireAdminAuthorization(
+        const authError = await requireAdminAuthorizationAsync(
             context.req.header('authorization'),
         );
         if (authError !== undefined) {
@@ -57,7 +57,7 @@ const createPutHandler =
         writeService: GebrauchtwagenWriteService,
     ) =>
     async (context: Context) => {
-        const authError = requireAdminAuthorization(
+        const authError = await requireAdminAuthorizationAsync(
             context.req.header('authorization'),
         );
         if (authError !== undefined) {
@@ -108,7 +108,7 @@ const createPutHandler =
 
 const createDeleteHandler =
     (service: GebrauchtwagenWriteService) => async (context: Context) => {
-        const authError = requireAdminAuthorization(
+        const authError = await requireAdminAuthorizationAsync(
             context.req.header('authorization'),
         );
         if (authError !== undefined) {

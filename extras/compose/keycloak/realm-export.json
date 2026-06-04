@@ -1,0 +1,131 @@
+{
+  "realm": "gebrauchtwagen",
+  "enabled": true,
+  "accessTokenLifespan": 300,
+  "accessTokenLifespanForImplicitFlow": 900,
+  "accessCodeLifespan": 60,
+  "accessCodeLifespanUserAction": 300,
+  "actionTokenGeneratedByAdminLifespan": 43200,
+  "defaultRoles": ["user"],
+  "roles": {
+    "realm": [
+      {
+        "name": "admin",
+        "description": "Administrator Role - Vollzugriff auf Gebrauchtwagen CRUD"
+      },
+      {
+        "name": "user",
+        "description": "User Role - Lesezugriff auf Gebrauchtwagen"
+      }
+    ]
+  },
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Demo",
+      "lastName": "Admin",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["admin", "user"]
+    },
+    {
+      "username": "user",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Demo",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "user",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["user"]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "gebrauchtwagen-app",
+      "name": "Gebrauchtwagen App",
+      "description": "Client fuer Gebrauchtwagen REST und GraphQL API",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "gebrauchtwagen-secret",
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "redirectUris": [
+        "http://localhost:3000/*",
+        "http://localhost:8080/*"
+      ],
+      "webOrigins": [
+        "http://localhost:3000",
+        "http://localhost:8080"
+      ],
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": true,
+      "claims": {
+        "address.formatted": true,
+        "phone_number_verified": true,
+        "email_verified": true,
+        "family_name": false,
+        "given_name": false
+      },
+      "protocolMappers": [
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "gebrauchtwagen-app audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "gebrauchtwagen-app",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
+    }
+  ],
+  "clientScopes": [],
+  "components": {
+    "org.keycloak.services.clientregistration.policy.ClientRegistrationPolicy": [
+      {
+        "name": "Allowed Protocol Mapper Types",
+        "providerId": "allowed-protocol-mappers",
+        "config": {
+          "allowed-protocol-mapper-types": [
+            "oidc-usermodel-realm-role-mapper",
+            "oidc-usermodel-client-role-mapper"
+          ]
+        }
+      }
+    ]
+  },
+  "requiredCredentials": [
+    "password"
+  ]
+}
