@@ -67,10 +67,7 @@ export const requireAdminAuthorizationAsync = async (
     }
 
     if (result.status === 'forbidden') {
-        return createProblemDetails(
-            forbidden,
-            'Admin-Rolle erforderlich',
-        );
+        return createProblemDetails(forbidden, 'Admin-Rolle erforderlich');
     }
 
     return createProblemDetails(

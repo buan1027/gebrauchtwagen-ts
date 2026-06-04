@@ -67,14 +67,8 @@
       "secret": "gebrauchtwagen-secret",
       "publicClient": false,
       "protocol": "openid-connect",
-      "redirectUris": [
-        "http://localhost:3000/*",
-        "http://localhost:8080/*"
-      ],
-      "webOrigins": [
-        "http://localhost:3000",
-        "http://localhost:8080"
-      ],
+      "redirectUris": ["http://localhost:3000/*", "http://localhost:8080/*"],
+      "webOrigins": ["http://localhost:3000", "http://localhost:8080"],
       "standardFlowEnabled": true,
       "implicitFlowEnabled": true,
       "directAccessGrantsEnabled": true,
@@ -124,7 +118,5 @@
       }
     ]
   },
-  "requiredCredentials": [
-    "password"
-  ]
+  "requiredCredentials": ["password"]
 }
