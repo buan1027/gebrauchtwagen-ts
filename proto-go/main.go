@@ -1,13 +1,15 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
 	"os"
 	"sync"
 	"sync/atomic"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/jmoiron/sqlx"
 )
 type Car struct {
 	ID             uint64 `json:"id"`
@@ -21,7 +23,7 @@ var (
 	cars   = make([]Car, 0)
 	carsMu sync.Mutex
 	nextID uint64 = 1
-	dbConn *sql.DB
+	dbConn *sqlx.DB
 )
 
 func listCars(w http.ResponseWriter, r *http.Request) {
@@ -91,26 +93,18 @@ func main() {
 		log.Println("No DATABASE_URL set — using in-memory store")
 	}
 
-	mux := http.NewServeMux()
+	r := chi.NewRouter()
 	// health endpoint for readiness checks
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
 	})
-	mux.HandleFunc("/cars", func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case http.MethodGet:
-			listCars(w, r)
-		case http.MethodPost:
-			createCar(w, r)
-		default:
-			w.WriteHeader(http.StatusMethodNotAllowed)
-		}
-	})
+	r.Get("/cars", listCars)
+	r.Post("/cars", createCar)
 
 	log.Println("proto-go server listening on :8080")
-	if err := http.ListenAndServe(":8080", mux); err != nil {
+	if err := http.ListenAndServe(":8080", r); err != nil {
 		log.Fatal(err)
 	}
 }
