@@ -59,6 +59,12 @@ Die wichtigsten Einstiegspunkte sind:
 
 Status: Work in progress — Feature branch `feature/15-abschlussreview` enthält die vollständige Entwicklungshistorie und zusätzliche Demonstrationscommits.
 
+Quick demo: To run the Go prototype via Docker:
+
+```bash
+./proto-go/run.sh
+```
+
 Das relationale Zielmodell ist als PlantUML-ER-Diagramm dokumentiert:
 
 - [docs/er-diagramm.md](docs/er-diagramm.md)
