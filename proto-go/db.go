@@ -1,26 +1,26 @@
 package main
 
 import (
-    "database/sql"
     "fmt"
     "os"
     "time"
 
+    "github.com/jmoiron/sqlx"
     _ "github.com/lib/pq"
 )
 
 // ConnectDB tries to connect using DATABASE_URL env. If missing, returns nil.
-func ConnectDB() (*sql.DB, error) {
+func ConnectDB() (*sqlx.DB, error) {
     dsn := os.Getenv("DATABASE_URL")
     if dsn == "" {
         return nil, nil // no DB configured
     }
 
     // Retry loop: try to connect for up to ~30s
-    var db *sql.DB
+    var db *sqlx.DB
     var err error
     for i := 0; i < 10; i++ {
-        db, err = sql.Open("postgres", dsn)
+        db, err = sqlx.Open("postgres", dsn)
         if err != nil {
             fmt.Printf("db: open attempt %d failed: %v\n", i+1, err)
         } else {
@@ -40,7 +40,7 @@ func ConnectDB() (*sql.DB, error) {
 }
 
 // InitSchema ensures the gebrauchtwagen table exists.
-func InitSchema(db *sql.DB) error {
+func InitSchema(db *sqlx.DB) error {
     if db == nil {
         return nil
     }
@@ -58,32 +58,21 @@ CREATE TABLE IF NOT EXISTS gebrauchtwagen (
 }
 
 // ListCarsDB returns all cars from DB.
-func ListCarsDB(db *sql.DB) ([]Car, error) {
-    rows, err := db.Query("SELECT id, fahrzeugnummer, marke, modell, baujahr FROM gebrauchtwagen ORDER BY id")
-    if err != nil {
-        return nil, err
-    }
-    defer rows.Close()
+func ListCarsDB(db *sqlx.DB) ([]Car, error) {
     var out []Car
-    for rows.Next() {
-        var c Car
-        if err := rows.Scan(&c.ID, &c.Fahrzeugnummer, &c.Marke, &c.Modell, &c.Baujahr); err != nil {
-            return nil, err
-        }
-        out = append(out, c)
-    }
-    return out, rows.Err()
+    err := db.Select(&out, "SELECT id, fahrzeugnummer, marke, modell, baujahr FROM gebrauchtwagen ORDER BY id")
+    return out, err
 }
 
 // CreateCarDB inserts a car and returns the created row with id.
-func CreateCarDB(db *sql.DB, in Car) (Car, error) {
-    var id uint64
-    query := `INSERT INTO gebrauchtwagen (fahrzeugnummer, marke, modell, baujahr) VALUES ($1,$2,$3,$4) RETURNING id` 
-    err := db.QueryRow(query, in.Fahrzeugnummer, in.Marke, in.Modell, in.Baujahr).Scan(&id)
+func CreateCarDB(db *sqlx.DB, in Car) (Car, error) {
+    var id int64
+    query := `INSERT INTO gebrauchtwagen (fahrzeugnummer, marke, modell, baujahr) VALUES ($1,$2,$3,$4) RETURNING id`
+    err := db.QueryRowx(query, in.Fahrzeugnummer, in.Marke, in.Modell, in.Baujahr).Scan(&id)
     if err != nil {
         return Car{}, err
     }
-    in.ID = id
+    in.ID = uint64(id)
     return in, nil
 }
 
