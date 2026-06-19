@@ -65,6 +65,12 @@ Quick demo: To run the Go prototype via Docker:
 ./proto-go/run.sh
 ```
 
+Health check: after startup, verify the service with:
+
+```bash
+curl -sS http://localhost:8080/health
+```
+
 Das relationale Zielmodell ist als PlantUML-ER-Diagramm dokumentiert:
 
 - [docs/er-diagramm.md](docs/er-diagramm.md)

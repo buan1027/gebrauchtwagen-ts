@@ -92,6 +92,12 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+	// health endpoint for readiness checks
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+	})
 	mux.HandleFunc("/cars", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:

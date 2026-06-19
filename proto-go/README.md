@@ -45,6 +45,11 @@ Hinweis: Die `run.sh`/`run.ps1` nutzen Docker, falls `go` nicht lokal installier
 
 Beispielanfragen:
 
+Health check:
+```bash
+curl -sS http://localhost:8080/health
+```
+
 GET alle Autos:
 
 ```bash
