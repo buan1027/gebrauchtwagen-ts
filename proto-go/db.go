@@ -4,6 +4,7 @@ import (
     "database/sql"
     "fmt"
     "os"
+    "time"
 
     _ "github.com/lib/pq"
 )
@@ -14,15 +15,28 @@ func ConnectDB() (*sql.DB, error) {
     if dsn == "" {
         return nil, nil // no DB configured
     }
-    db, err := sql.Open("postgres", dsn)
-    if err != nil {
-        return nil, err
+
+    // Retry loop: try to connect for up to ~30s
+    var db *sql.DB
+    var err error
+    for i := 0; i < 10; i++ {
+        db, err = sql.Open("postgres", dsn)
+        if err != nil {
+            fmt.Printf("db: open attempt %d failed: %v\n", i+1, err)
+        } else {
+            if pingErr := db.Ping(); pingErr == nil {
+                return db, nil
+            } else {
+                fmt.Printf("db: ping attempt %d failed: %v\n", i+1, pingErr)
+                db.Close()
+            }
+        }
+        time.Sleep(3 * time.Second)
     }
-    if err := db.Ping(); err != nil {
-        db.Close()
-        return nil, err
+    if err == nil {
+        err = fmt.Errorf("unable to connect to database after retries")
     }
-    return db, nil
+    return nil, err
 }
 
 // InitSchema ensures the gebrauchtwagen table exists.
