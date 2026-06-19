@@ -57,6 +57,8 @@ Die wichtigsten Einstiegspunkte sind:
 
 ## ER-Diagramm
 
+Status: Work in progress — Feature branch `feature/15-abschlussreview` enthält die vollständige Entwicklungshistorie und zusätzliche Demonstrationscommits.
+
 Das relationale Zielmodell ist als PlantUML-ER-Diagramm dokumentiert:
 
 - [docs/er-diagramm.md](docs/er-diagramm.md)

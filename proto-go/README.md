@@ -41,6 +41,7 @@ Voraussetzung: Go installiert (>= 1.20)
 cd proto-go
 go run main.go
 ```
+Hinweis: Die `run.sh`/`run.ps1` nutzen Docker, falls `go` nicht lokal installiert ist — so lässt sich die Demo schnell starten.
 
 Beispielanfragen:
 
