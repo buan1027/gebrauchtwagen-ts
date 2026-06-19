@@ -11,6 +11,18 @@ services:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+  app:
+    image: golang:1.20
+    working_dir: /app
+    volumes:
+      - ./:/app
+    command: ["bash","-lc","go run ."]
+    environment:
+      - DATABASE_URL=postgres://postgres:example@db:5432/gebrauchtwagen?sslmode=disable
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
 
 volumes:
   db_data:
